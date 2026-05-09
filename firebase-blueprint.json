@@ -1,0 +1,287 @@
+{
+  "entities": {
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "A restaurant listing in the delivery app.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the restaurant"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description/cuisine"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Average rating"
+        },
+        "deliveryTime": {
+          "type": "string",
+          "description": "Estimated delivery time (e.g., '20-30 min')"
+        },
+        "deliveryFee": {
+          "type": "number",
+          "description": "Delivery fee amount"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to restaurant cover image"
+        },
+        "category": {
+          "type": "string",
+          "description": "Primary category (e.g., Burger, Pizza)"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "imageUrl",
+        "category"
+      ]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food item in a restaurant's menu.",
+      "type": "object",
+      "properties": {
+        "restaurantId": {
+          "type": "string",
+          "description": "ID of the restaurant this item belongs to"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the dish"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the dish"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price in dollars"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to food image"
+        }
+      },
+      "required": [
+        "restaurantId",
+        "name",
+        "price",
+        "imageUrl"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "ID of the user who placed the order"
+        },
+        "driverId": {
+          "type": "string",
+          "description": "ID of the driver assigned to this order"
+        },
+        "items": {
+          "type": "array",
+          "description": "List of items ordered"
+        },
+        "total": {
+          "type": "number",
+          "description": "Total order amount"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "preparing",
+            "delivering",
+            "completed",
+            "cancelled"
+          ],
+          "description": "Current status of the order"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Order placement time"
+        },
+        "address": {
+          "type": "string",
+          "description": "Delivery address"
+        },
+        "deliveryOption": {
+          "type": "string",
+          "enum": ["Leave at door", "Hand to me"],
+          "description": "Delivery preference"
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Specific delivery instructions"
+        }
+      },
+      "required": [
+        "userId",
+        "items",
+        "total",
+        "status",
+        "createdAt",
+        "address",
+        "deliveryOption"
+      ]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A message in the order chat.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "senderId", "text", "createdAt"]
+    },
+    "Driver": {
+      "title": "Driver",
+      "description": "Delivery driver profile.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "rating": { "type": "number" },
+        "phone": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "photoURL": {
+          "type": "string"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Admin status"
+        },
+        "isDriver": {
+          "type": "boolean",
+          "description": "Driver status"
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Whether the driver is currently active"
+        },
+        "favorites": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "phone": {
+          "type": "string"
+        },
+        "addresses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "payoutInfo": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["bank", "momo"] },
+            "accountHolder": { "type": "string" },
+            "bankName": { "type": "string" },
+            "accountNumber": { "type": "string" },
+            "routingNumber": { "type": "string" },
+            "momoNumber": { "type": "string" },
+            "momoNetwork": { "type": "string", "enum": ["mtn", "telecel", "at"] },
+            "momoName": { "type": "string" }
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "email"
+      ]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User review for a restaurant and driver.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "userId": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5, "description": "Restaurant rating" },
+        "driverRating": { "type": "number", "minimum": 1, "maximum": 5, "description": "Driver rating" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "userId", "restaurantId", "rating"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Promotional banners for the homepage.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "active": { "type": "boolean" },
+        "color": { "type": "string", "description": "Background color class (e.g., bg-orange-500)" }
+      },
+      "required": ["title", "imageUrl", "active"]
+    }
+  },
+  "firestore": {
+    "restaurants": {
+      "schema": "Restaurant",
+      "description": "Collection of restaurants"
+    },
+    "menu": {
+      "schema": "MenuItem",
+      "description": "Collection of all menu items from all restaurants"
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "users": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "promotions": {
+      "schema": "Promotion",
+      "description": "Promotional banners"
+    },
+    "drivers": {
+      "schema": "Driver",
+      "description": "Delivery drivers"
+    },
+    "reviews": {
+      "schema": "Review",
+      "description": "User reviews"
+    },
+    "messages": {
+      "schema": "ChatMessage",
+      "description": "Real-time chat messages between customer and driver"
+    }
+  }
+}

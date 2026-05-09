@@ -1,0 +1,8 @@
+{
+  "name": "fooddash",
+  "description": "Ghana's premier high-speed logistics and food delivery platform. Real-time tracking, secure driver payouts, and the city's finest kitchens.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}

@@ -1,0 +1,196 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------------------------------------------------------
+    // HELPERS
+    // ---------------------------------------------------------
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == "tettehseth67@gmail.com" ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isAdminToken() {
+      return isSignedIn() && request.auth.token.email == "tettehseth67@gmail.com";
+    }
+
+    function isDriver() {
+      return isSignedIn() && (
+        isAdmin() ||
+        exists(/databases/$(database)/documents/drivers/$(request.auth.uid))
+      );
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------------------------------------------------------
+    // USERS
+    // ---------------------------------------------------------
+    function isValidUser(data) {
+      return (!('email' in data) || (data.email is string && data.email.size() <= 256))
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100));
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /users/{userId} {
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidUser(request.resource.data)
+        && (
+          isAdmin() ||
+          (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'displayName', 'photoURL', 'favorites', 'phone', 'addresses', 'isOnline', 'driverInfo', 'updatedAt', 'uid', 'email', 'isDriver', 'payoutInfo'
+          ]))
+        );
+    }
+
+    // ---------------------------------------------------------
+    // RESTAURANTS
+    // ---------------------------------------------------------
+    function isValidRestaurant(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.description is string && data.description.size() <= 1000
+        && data.category is string;
+    }
+
+    match /restaurants/{restaurantId} {
+      allow get: if isValidId(restaurantId);
+      allow list: if true;
+      allow create, update: if isAdmin() && isValidId(restaurantId) && isValidRestaurant(request.resource.data);
+      allow delete: if isAdmin() && isValidId(restaurantId);
+    }
+
+    // ---------------------------------------------------------
+    // MENU ITEMS
+    // ---------------------------------------------------------
+    function isValidMenuItem(data) {
+      return data.name is string && data.name.size() <= 100
+        && data.price is number && data.price >= 0
+        && data.restaurantId is string;
+    }
+
+    match /menu/{itemId} {
+      allow get: if isValidId(itemId);
+      allow list: if true;
+      allow create, update: if isAdmin() && isValidId(itemId) && isValidMenuItem(request.resource.data);
+      allow delete: if isAdmin() && isValidId(itemId);
+    }
+
+    // ---------------------------------------------------------
+    // ORDERS
+    // ---------------------------------------------------------
+    function isValidOrder(data) {
+      return data.userId == request.auth.uid
+        && data.items is list
+        && data.total is number && data.total >= 0
+        && data.status in ['pending', 'preparing', 'assigned', 'delivering', 'completed', 'cancelled']
+        && (request.method == 'create' ? data.createdAt == request.time : true)
+        && data.deliveryOption in ['Leave at door', 'Hand to me'];
+    }
+
+    match /orders/{orderId} {
+      allow get: if (isOwner(resource.data.userId) || isOwner(resource.data.driverId) || isAdmin()) && isValidId(orderId);
+      allow list: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.driverId == request.auth.uid || 
+        isAdminToken() ||
+        resource.data.status in ['pending', 'preparing'] ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isValidId(orderId) && isValidOrder(request.resource.data);
+      allow update: if isValidId(orderId) && (isAdmin() || (
+        isOwner(resource.data.userId) 
+        && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+           && request.resource.data.status == 'cancelled'
+           && resource.data.status == 'pending')
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRated'])
+              && resource.data.status == 'completed')
+        )
+      ) || (
+        isDriver() && (
+          // 1. Driver claiming job (Assigned)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'driverId', 'updatedAt'])
+           && request.resource.data.status == 'assigned'
+           && resource.data.status in ['pending', 'preparing']
+           && request.resource.data.driverId == request.auth.uid
+           && request.resource.data.updatedAt == request.time)
+          || 
+          // 2. Driver picking up (Delivering)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+           && request.resource.data.status == 'delivering'
+           && resource.data.status == 'assigned'
+           && resource.data.driverId == request.auth.uid
+           && request.resource.data.updatedAt == request.time)
+          ||
+          // 3. Driver completing delivery (Completed)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+           && request.resource.data.status == 'completed'
+           && resource.data.status == 'delivering'
+           && resource.data.driverId == request.auth.uid
+           && request.resource.data.updatedAt == request.time)
+        )
+      ));
+      allow delete: if isValidId(orderId) && (isAdmin() || (
+        isOwner(resource.data.userId) && (resource.data.status == 'pending' || resource.data.status == 'cancelled' || resource.data.status == 'completed')
+      ));
+    }
+
+    // Admin list
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow write: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+    }
+
+    // ---------------------------------------------------------
+    // REVIEWS
+    // ---------------------------------------------------------
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(reviewId) && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if (isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid)) && isValidId(reviewId);
+    }
+
+    // ---------------------------------------------------------
+    // PROMOTIONS
+    // ---------------------------------------------------------
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(promoId);
+    }
+    // ---------------------------------------------------------
+    // DRIVERS
+    // ---------------------------------------------------------
+    match /drivers/{driverId} {
+      allow get: if isSignedIn() && isValidId(driverId);
+      allow list: if isSignedIn();
+      allow write: if (isAdmin() || isOwner(driverId)) && isValidId(driverId);
+    }
+  }
+}

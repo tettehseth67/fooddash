@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  
+  --color-brand: #FF3008;
+  --color-brand-hover: #E62B07;
+  --color-surface: #F7F7F7;
+  
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.5rem;
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes pulsing-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(255, 48, 8, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 40px rgba(255, 48, 8, 0.25);
+    }
+  }
+
+  --animate-shimmer: shimmer 2.5s infinite;
+  --animate-pulsing-glow: pulsing-glow 4s infinite ease-in-out;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-[#191919] bg-[#FAFAFA] overflow-x-hidden;
+    background-image: 
+      radial-gradient(#FF300805 1px, transparent 1px),
+      radial-gradient(#FF300803 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: 0 0, 20px 20px;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-balance font-bold;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-1.5;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-full hover:bg-gray-300 transition-colors;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.glass {
+  @apply bg-white/90 backdrop-blur-xl border-b border-gray-100;
+}
+
+.btn-primary {
+  @apply bg-brand text-white px-6 py-3 rounded-full font-bold hover:bg-brand-hover transition-all active:scale-95 shadow-md hover:shadow-lg;
+}
+
+.shadow-soft {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-card {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
