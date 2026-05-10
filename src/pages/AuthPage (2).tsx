@@ -26,11 +26,7 @@ export function AuthPage() {
     try {
       await signIn();
     } catch (error: any) {
-      if (error.code === 'auth/popup-blocked') {
-        setError('Popups are blocked by your browser. We are attempting to sign you in via redirect instead...');
-      } else {
-        setError(error.message || 'Failed to sign in with Google');
-      }
+      setError(error.message || 'Failed to sign in with Google');
     } finally {
       setIsSubmitting(false);
     }

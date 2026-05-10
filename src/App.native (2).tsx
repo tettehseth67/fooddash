@@ -30,7 +30,7 @@ import {
 import { dbService } from './services/db';
 import { Restaurant } from './types';
 import { auth, googleProvider } from './lib/firebase';
-import { signInWithPopup, signInWithRedirect, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { signInWithPopup, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 const { width } = Dimensions.get('window');
 
@@ -80,13 +80,8 @@ export default function App() {
   const handleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      if (error.code === 'auth/popup-blocked') {
-        console.warn('Popup blocked in simulator, trying redirect...');
-        await signInWithRedirect(auth, googleProvider);
-      } else {
-        console.error("Sign in failed", error);
-      }
+    } catch (error) {
+      console.error("Sign in failed", error);
     }
   };
 

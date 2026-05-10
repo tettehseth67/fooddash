@@ -3,8 +3,6 @@ import {
   onAuthStateChanged, 
   User, 
   signInWithPopup, 
-  signInWithRedirect,
-  getRedirectResult,
   signOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -33,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingIn, setSigningIn] = useState(false);
 
   const refreshProfile = async () => {
     if (user) {
@@ -47,11 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // Handle redirect result if any
-    getRedirectResult(auth).catch(err => {
-      console.error("Firebase redirect result error:", err);
-    });
-
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
@@ -100,18 +94,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async () => {
+    if (signingIn) return;
+    setSigningIn(true);
     try {
-      // Direct call to maximize chance of success with popup
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
-      // If popup is blocked, fallback to redirect which usually works in iframes
-      if (error.code === 'auth/popup-blocked') {
-        console.warn('Popup blocked, falling back to redirect...');
-        await signInWithRedirect(auth, googleProvider);
-      } else if (error.code !== 'auth/cancelled-popup-request') {
+      if (error.code !== 'auth/cancelled-popup-request') {
         console.error('Sign in error:', error);
-        throw error;
       }
+    } finally {
+      setSigningIn(false);
     }
   };
 
