@@ -269,7 +269,7 @@ export function OrderTrackingPage() {
                         <span className="text-4xl font-black text-[#191919] tabular-nums">
                           {getEstimatedMinutes(order.status)}
                         </span>
-                        {order.status !== 'completed' && order.status !== 'cancelled' && <span className="text-lg font-black text-gray-400 italic">min</span>}
+                        {order.status !== 'completed' && (order.status as string) !== 'cancelled' && <span className="text-lg font-black text-gray-400 italic">min</span>}
                       </div>
                     </div>
                     <div className="w-px h-12 bg-gray-100 hidden sm:block" />
